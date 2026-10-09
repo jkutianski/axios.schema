@@ -25,11 +25,21 @@ responseContext.response.status;
 createSchemaMiddleware(axios.create(), {
 	routes: {
 		'GET /users/:id': {
-			urlParams: z.object({ id: z.string() }),
+			urlParams: z.object({ id: z.coerce.number() }),
 			response: userSchema,
 		},
 	},
 	parse: (schema, data, context) => {
+		if (context.phase === 'urlParams') {
+			const capturedId: string = context.params.id;
+			void capturedId;
+		}
+
+		if (context.phase === 'request' || context.phase === 'response') {
+			const parsedId: number = context.params.id;
+			void parsedId;
+		}
+
 		if (context.phase === 'response') {
 			context.response.status;
 		}

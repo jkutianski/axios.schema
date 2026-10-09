@@ -1,4 +1,6 @@
 import { expect, test } from '@jest/globals';
+import axios from 'axios';
+import { z } from 'zod';
 import { createSchemaMiddleware } from '../src/index.js';
 
 function createAxiosMock() {
@@ -181,7 +183,7 @@ test('does not match routes with missing or mismatched query parameters', async 
 	expect(parseCalled).toBe(false);
 });
 
-test('validates combined URL params before request data', async () => {
+test('runs URL params, request, and response schemas in order', async () => {
 	const mock = createAxiosMock();
 	const parsed = [];
 
@@ -190,6 +192,7 @@ test('validates combined URL params before request data', async () => {
 			'POST /users/:id?active=:active': {
 				urlParams: 'user-url-params',
 				request: 'user-request',
+				response: 'user-response',
 			},
 		},
 		parse: (schema, data, context) => {
@@ -203,7 +206,9 @@ test('validates combined URL params before request data', async () => {
 		url: '/users/42?active=true',
 		data: { name: 'Ada' },
 	};
-	await [...mock.handlers.request.values()][0](config);
+	const requestConfig = await [...mock.handlers.request.values()][0](config);
+	const response = { config: requestConfig, data: { id: 42, name: 'Ada' } };
+	await [...mock.handlers.response.values()][0](response);
 
 	expect(parsed).toEqual([
 		{
@@ -218,7 +223,71 @@ test('validates combined URL params before request data', async () => {
 			phase: 'request',
 			params: { id: '42', active: 'true' },
 		},
+		{
+			schema: 'user-response',
+			data: { id: 42, name: 'Ada' },
+			phase: 'response',
+			params: { id: '42', active: 'true' },
+		},
 	]);
+});
+
+test('uses transformed URL params in request and response parser contexts', async () => {
+	const contexts = [];
+	const client = axios.create({
+		adapter: async (config) => ({
+			data: { id: 42 },
+			status: 200,
+			statusText: 'OK',
+			headers: {},
+			config,
+		}),
+	});
+
+	const detach = createSchemaMiddleware(client, {
+		routes: {
+			'GET /users/:id': {
+				urlParams: z.object({ id: z.coerce.number() }),
+				request: z.undefined(),
+				response: z.object({ id: z.number() }),
+			},
+		},
+		parse: (schema, data, context) => {
+			contexts.push({ phase: context.phase, params: context.params });
+			return schema.parse(data);
+		},
+	});
+
+	try {
+		await client.get('/users/42');
+	} finally {
+		detach();
+	}
+
+	expect(contexts).toEqual([
+		{ phase: 'urlParams', params: { id: '42' } },
+		{ phase: 'request', params: { id: 42 } },
+		{ phase: 'response', params: { id: 42 } },
+	]);
+});
+
+test('rejects non-object results from URL params parsers', async () => {
+	const mock = createAxiosMock();
+	let parsedParams;
+
+	createSchemaMiddleware(mock.client, {
+		routes: {
+			'GET /users/:id': { urlParams: 'user-url-params' },
+		},
+		parse: () => parsedParams,
+	});
+
+	const requestHandler = [...mock.handlers.request.values()][0];
+	for (const value of [null, 42, ['not', 'an object']]) {
+		parsedParams = value;
+		await expect(requestHandler({ method: 'GET', url: '/users/42' }))
+			.rejects.toThrow(new TypeError('urlParams parser must return an object'));
+	}
 });
 
 test('rejects a request when URL params fail validation', async () => {

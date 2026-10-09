@@ -40,7 +40,8 @@ const createUserSchema = z.object({
 });
 
 const userRequestParams = z.object({
-	id: z.string().regex(/^\d+$/),
+	// URL params are strings; coerce the captured id to a number.
+	id: z.coerce.number(),
 }).strict();
 
 const detach = createSchemaMiddleware(client, {
@@ -51,7 +52,7 @@ const detach = createSchemaMiddleware(client, {
 		},
 		'GET /users?id=:id': {
 			urlParams: userRequestParams,
-			response: userSchema,
+			response: z.array(userSchema),
 		},
 		'POST /users': {
 			request: createUserSchema,
@@ -60,7 +61,7 @@ const detach = createSchemaMiddleware(client, {
 	},
 	parse: (schema, data, { phase, params }) => {
 		if (phase === 'response' && params.id) {
-			console.log(`Validated response for user ${params.id}`);
+			console.log(`Validated response for user ${typeof params.id} ${params.id}`);
 		}
 
 		return schema.parse(data);

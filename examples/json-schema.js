@@ -3,7 +3,7 @@ import Ajv from 'ajv';
 import { createSchemaMiddleware } from '../src/index.js';
 
 const client = axios.create({ baseURL: 'https://jsonplaceholder.typicode.com' });
-const ajv = new Ajv();
+const ajv = new Ajv(); // use { coerceTypes: true } in case you want to coerce types automatically
 
 const userSchema = {
 	type: 'object',

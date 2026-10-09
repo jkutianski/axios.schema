@@ -161,12 +161,12 @@ function matchQuery(patternParams, searchParams, params) {
  *   parse: (schema: unknown, data: unknown, context: {
  *     phase: 'urlParams' | 'request' | 'response',
  *     config: import('axios').AxiosRequestConfig,
- *     params: Record<string, string>,
+ *     params: Record<string, unknown>,
  *     response?: import('axios').AxiosResponse,
  *   }) => unknown | Promise<unknown>
  * }} options - Middleware configuration.
  * @returns {() => void} A function that ejects the installed interceptors.
- * @throws {TypeError} If the client, routes, parser, or a route key is invalid.
+ * @throws {TypeError} If the client, routes, parser, route key, or parsed URL params are invalid.
  */
 export function createSchemaMiddleware(client, options) {
 	const { routes, parse } = options ?? {};
@@ -235,25 +235,36 @@ export function createSchemaMiddleware(client, options) {
 		return undefined;
 	};
 
+	const parsedURLParamsByConfig = new WeakMap();
+
 	const requestId = client.interceptors.request.use(async (config) => {
 		const match = getRoute(config);
 		const urlParamsSchema = match?.schema.urlParams;
 		const schema = match?.schema.request;
+		let params = match?.params;
 
 		if (urlParamsSchema !== undefined) {
-			await parse(urlParamsSchema, match.params, {
+			const parsedParams = await parse(urlParamsSchema, params, {
 				phase: 'urlParams',
 				config,
-				params: match.params,
+				params,
 			});
+			if (parsedParams === null || typeof parsedParams !== 'object' || Array.isArray(parsedParams)) {
+				throw new TypeError('urlParams parser must return an object');
+			}
+			params = parsedParams;
 		}
 
 		if (schema !== undefined) {
 			config.data = await parse(schema, config.data, {
 				phase: 'request',
 				config,
-				params: match.params,
+				params,
 			});
+		}
+
+		if (match !== undefined) {
+			parsedURLParamsByConfig.set(config, params);
 		}
 
 		return config;
@@ -268,7 +279,7 @@ export function createSchemaMiddleware(client, options) {
 				phase: 'response',
 				config: response.config,
 				response,
-				params: match.params,
+				params: parsedURLParamsByConfig.get(response.config) ?? match.params,
 			});
 		}
 
