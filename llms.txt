@@ -1,0 +1,61 @@
+# axios.schema
+
+## Overview
+
+`axios.schema` is a lightweight Axios middleware for route-based validation. It matches HTTP routes by method and path, captures path/query params, and validates URL params, request bodies, and successful response payloads with a parser of your choice.
+
+## Primary API
+
+```js
+createSchemaMiddleware(client, { routes, parse })
+```
+
+- `client`: an Axios instance
+- `routes`: object keyed by `METHOD /path` entries
+- `parse`: function used to validate or transform data
+
+## Matching behavior
+
+Route keys support:
+
+- method matching (`GET`, `POST`, etc.)
+- path parameters like `:id`
+- query params like `?id=:id&active=true`
+- string-valued captures in `context.params`
+
+The middleware uses Axios request/response interceptors and applies matching schemas in the `urlParams`, `request`, and `response` phases.
+
+## Parser contract
+
+```js
+parse(schema, data, context)
+```
+
+`context` includes:
+
+- `phase`: `'urlParams' | 'request' | 'response'`
+- `config`: Axios request config
+- `params`: captured path/query values
+- `response`: Axios response object during response phase
+
+For `request` and `response`, the parser return value replaces the original data. For `urlParams`, validation runs but the returned value is ignored.
+
+## Repo structure
+
+- `src/index.js`: core middleware implementation
+- `test/index.test.js`: route matching and validation tests
+- `README.md`: overview and usage examples
+- `docs/agent-guide.md`: project-specific agent documentation
+- `skills/axios-schema/SKILL.md`: repo-focused contributor guidance
+
+## Validation commands
+
+```sh
+npm test
+npm run test:coverage
+npm run test:types
+```
+
+## Notes
+
+This project is intentionally minimal and generic: it does not bundle a schema library and leaves validation behavior to the supplied parser.
