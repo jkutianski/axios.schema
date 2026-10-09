@@ -1,74 +1,179 @@
-# Axios Schema Skill
+---
+name: axios-schema
+description: Use axios.schema to validate Axios URL params, request bodies, and responses with route-based matching and a custom parser, Zod, or Ajv.
+---
 
-## Purpose
+# axios.schema
 
-Use this skill when working on the `axios.schema` repository. It gives a compact, repo-specific guide for changing route-based Axios validation logic without drifting from the project’s conventions.
+## What this library does
 
-## Project summary
+`axios.schema` is a route-based Axios middleware for validating request data and successful response payloads at the HTTP boundary.
 
-`axios.schema` is a lightweight Axios middleware that matches HTTP routes and validates URL parameters, request bodies, and successful response payloads using a supplied parser.
+It matches routes like:
 
-Core concepts:
+- `GET /users/:id`
+- `POST /items`
+- `GET /users?id=:id&active=true`
 
-- Route keys look like `METHOD /path` with optional `?query=value`
-- Path params such as `:id` are captured into `context.params`
-- Query params written as `:param` are also captured into `context.params`
-- The parser contract is `parse(schema, data, context)`
-- `context.phase` is one of `'urlParams'`, `'request'`, or `'response'`
-- For `request` and `response`, the parsed value replaces the original data
-- For `urlParams`, the validation runs but the return value is ignored
+and validates:
 
-## Files to inspect first
+- captured `urlParams`
+- `request` bodies
+- successful `response` payloads
 
-- `src/index.js` — middleware logic and route matching
-- `test/index.test.js` — current behavior and regression tests
-- `README.md` — intended API and examples
+## Install
 
-## Working rules
+Install the core dependencies:
 
-1. Keep the middleware generic and parser-agnostic.
-2. Preserve the existing request/response interceptor behavior.
-3. Preserve route matching semantics for method, path, and query params.
-4. When changing behavior, add or update tests in `test/index.test.js`.
-5. Keep the parser context deterministic: `context.params` should remain string-valued captures.
-6. Prefer surgical changes; do not broaden scope beyond the specific bug or feature.
-7. Guarantee coverage remains at 100% when modifying logic.
+```bash
+npm install axios axios.schema
+```
 
-## Common tasks
+The following Basic setup example uses Zod, so install it before running that example:
 
-### Fixing request/response validation
+```bash
+npm install zod
+```
 
-Look at `createSchemaMiddleware` and the matching helpers in `src/index.js`. Confirm the selected route matches the method, path, and query params before calling `parse`.
+Zod is optional. You can use Ajv or a custom parser instead.
 
-### Adding support for Axios params
+## Basic setup
 
-If Axios config includes `params`, normalize them into the effective URL search params before route matching, and make sure the captured values appear correctly in `context.params`.
+```js
+import axios from 'axios';
+import { createSchemaMiddleware } from 'axios.schema';
+import { z } from 'zod';
 
-### Updating tests
+const client = axios.create({ baseURL: 'https://api.example.com' });
 
-Add focused tests for:
+const detach = createSchemaMiddleware(client, {
+  routes: {
+    'GET /users/:id': {
+      urlParams: z.object({ id: z.string() }),
+      response: z.object({ id: z.number(), name: z.string() }),
+    },
+    'POST /users': {
+      request: z.object({ name: z.string() }),
+      response: z.object({ id: z.number(), name: z.string() }),
+    },
+  },
+  parse: (schema, data, context) => schema.parse(data),
+});
 
-- method/path matching
-- query param matching
-- dynamic path params
-- missing or mismatched query values
-- request/response validation sequencing
-- parser error propagation
-- invalid route keys / invalid middleware options
+// use client...
+detach();
+```
 
-## Validation commands
+## Core API
 
-Use the project’s standard commands:
+```js
+createSchemaMiddleware(client, { routes, parse })
+```
 
-```sh
+Parameters:
+
+- `client`: Axios instance
+- `routes`: map of `METHOD /path` to validation schemas
+- `parse(schema, data, context)`: parser, validator, or transformer
+
+## Parser contract
+
+```js
+parse(schema, data, context)
+```
+
+`context` contains:
+
+- `phase`: `'urlParams' | 'request' | 'response'`
+- `config`: Axios request config
+- `params`: matched path/query values as strings
+- `response`: response object during response phase
+
+Behavior:
+
+- `urlParams`: validates the captured path/query parameter object; the parser's return value is ignored, so these params are not transformed in the same way as request or response bodies
+- `request`: validates/transforms `config.data`, and the returned value replaces the request body
+- `response`: validates/transforms the successful `response.data`, and the returned value replaces the response payload
+- thrown errors or rejected promises fail the request
+
+## Route matching rules
+
+Supported route patterns:
+
+- `METHOD /users/:id`
+- `METHOD /users?id=:id`
+- `METHOD /users?id=active&role=user`
+
+Rules:
+
+- method matching is case-insensitive
+- missing method defaults to `GET`
+- `:param` matches a single non-empty path segment
+- literal query values must match exactly
+- route params become `context.params[paramName]`
+- params not listed in the route are ignored
+
+## Adapter examples
+
+### Zod
+
+```js
+import { z } from 'zod';
+const parse = (schema, data) => schema.parse(data);
+```
+
+### Ajv / JSON Schema
+
+```js
+import Ajv from 'ajv';
+const ajv = new Ajv();
+
+const parse = (schema, data) => {
+  const validate = ajv.compile(schema);
+  if (!validate(data)) {
+    throw new TypeError(ajv.errorsText(validate.errors));
+  }
+  return data;
+};
+```
+
+### Custom validator
+
+```js
+const parse = (schema, data) => {
+  if (!schema(data)) {
+    throw new TypeError('Invalid payload');
+  }
+  return data;
+};
+```
+
+## Typical debugging checklist
+
+- route keys are valid `METHOD /path` strings
+- path params use `:name` and match non-empty segments
+- literal query values match exactly
+- when the request config includes `params`, those values are merged into the effective URL before matching; existing URL query entries are preserved and appended
+- parser is throwing or rejecting unexpectedly
+- `context.params` values are stringified as expected
+
+## Repo maintenance notes
+
+When modifying the library itself, inspect:
+
+- `src/index.js`: middleware and route matching logic
+- `test/index.test.js`: regression coverage
+- `README.md`: usage and external API docs
+- `examples/zod.js` and `examples/json-schema.js`: example integrations
+
+Validation commands:
+
+```bash
 npm test
 npm run test:coverage
 npm run test:types
 ```
 
-## Notes for agents
+## Compatibility note
 
-- This project is intentionally small and opinionated.
-- Do not introduce a schema library dependency into the runtime.
-- Keep examples and docs aligned with actual behavior.
-- Prefer minimal, readable code over abstraction that does not add value.
+YAML frontmatter improves discoverability and metadata, but automatic installation depends on the consuming agent/tooling. This skill is written to be useful both for external integration and for repo maintenance.

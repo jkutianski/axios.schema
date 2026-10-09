@@ -40,13 +40,16 @@ parse(schema, data, context)
 
 For `request` and `response`, the parser return value replaces the original data. For `urlParams`, validation runs but the returned value is ignored.
 
-## Repo structure
+## Documentation and source
 
-- `src/index.js`: core middleware implementation
-- `test/index.test.js`: route matching and validation tests
-- `README.md`: overview and usage examples
-- `docs/agent-guide.md`: project-specific agent documentation
-- `skills/axios-schema/SKILL.md`: repo-focused contributor guidance
+* [README](README.md) — installation, quick start, API and examples.
+* [Agent guide](docs/agent-guide.md) — route matching, parser contract, execution flow and testing.
+* [Zod example](examples/zod.js) — request and response validation using Zod.
+* [JSON Schema example](examples/json-schema.js) — validation using Ajv.
+* [TypeScript example](examples/typescript_zod.ts) — TypeScript integration.
+* [Implementation](src/index.js) — middleware and route matching logic.
+* [Tests](test/index.test.js) — behavioral tests and regression coverage.
+* [Package metadata](package.json) — version, exports, dependencies and package configuration.
 
 ## Validation commands
 
