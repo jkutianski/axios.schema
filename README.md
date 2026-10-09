@@ -9,12 +9,12 @@ Use this when an Axios client needs API contract validation at its request/respo
 From the source checkout, install the project dependencies:
 
 ```sh
-npm install
+npm install axios.schema axios
 ```
 
 ```js
 import axios from 'axios';
-import { createSchemaMiddleware } from './src/index.js';
+import { createSchemaMiddleware } from 'axios.schema';
 
 const client = axios.create({ baseURL: 'https://api.example.com' });
 
@@ -91,6 +91,7 @@ The middleware does not depend on a particular schema library. Adapt its parser 
 
 ```js
 import { z } from 'zod';
+import { createSchemaMiddleware } from 'axios.schema';
 
 const itemRequest = z.object({ name: z.string() });
 const itemResponse = z.object({ id: z.number(), name: z.string() });
@@ -119,6 +120,7 @@ JSON Schema works with validators such as Ajv. The parser validates the data and
 
 ```js
 import Ajv from 'ajv';
+import { createSchemaMiddleware } from 'axios.schema';
 
 const ajv = new Ajv();
 
