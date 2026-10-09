@@ -1,7 +1,7 @@
 {
   "name": "axios.schema",
   "version": "1.0.0",
-  "description": "Route-based Axios request, response, and URL parameter validation using Zod, JSON Schema/Ajv, or a custom parser",
+  "description": "Route-based Axios middleware for validating URL params, request bodies, and response payloads with Zod, JSON Schema/Ajv, or any custom parser",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jkutianski/axios.schema.git"
@@ -23,19 +23,19 @@
   "keywords": [
     "axios",
     "axios-middleware",
-    "schema",
-    "validation",
+    "route-validation",
     "runtime-validation",
-    "api-validation",
     "request-validation",
     "response-validation",
-    "url-parameter-validation",
+    "url-params",
+    "schema-validation",
     "zod",
     "json-schema",
     "ajv",
     "middleware",
     "typescript",
-    "http-client"
+    "http-client",
+    "api-validation"
   ],
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
