@@ -1,4 +1,51 @@
 /**
+ * Normalizes Axios query params into a flat list of key/value pairs.
+ *
+ * @param {unknown} params - Axios query params value.
+ * @returns {[string, string][]} Flattened params entries.
+ */
+function getSearchParamsEntries(params) {
+	if (params === undefined || params === null) {
+		return [];
+	}
+
+	if (params instanceof URLSearchParams) {
+		return [...params.entries()];
+	}
+
+	if (typeof params === 'string') {
+		return [...new URLSearchParams(params).entries()];
+	}
+
+	if (Array.isArray(params)) {
+		return params.flatMap((entry) => {
+			if (Array.isArray(entry)) {
+				const [key, value] = entry;
+				return key === undefined ? [] : [[String(key), String(value ?? '')]];
+			}
+
+			return [];
+		});
+	}
+
+	return Object.entries(params).flatMap(([key, value]) => {
+		if (value === undefined) {
+			return [];
+		}
+
+		if (Array.isArray(value)) {
+			return value.map((item) => [String(key), String(item ?? '')]);
+		}
+
+		if (value !== null && typeof value === 'object') {
+			return [[String(key), JSON.stringify(value)]];
+		}
+
+		return [[String(key), String(value)]];
+	});
+}
+
+/**
  * Resolves a request URL from an Axios config.
  *
  * @param {import('axios').AxiosRequestConfig | undefined} config - Axios config.
@@ -10,7 +57,13 @@ function getURL(config) {
 	}
 
 	try {
-		return new URL(config.url, config.baseURL ?? 'http://localhost');
+		const url = new URL(config.url, config.baseURL ?? 'http://localhost');
+		const searchParams = new URLSearchParams(url.search);
+		for (const [key, value] of getSearchParamsEntries(config.params)) {
+			searchParams.append(key, value);
+		}
+		url.search = searchParams.toString();
+		return url;
 	} catch {
 		return null;
 	}

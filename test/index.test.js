@@ -60,7 +60,7 @@ test('selects request and response schemas by HTTP method and URL path', async (
 	expect(parsedParams).toEqual([{}, { id: '42' }]);
 });
 
-test('matches query parameters and exposes captured values in parser context', async () => {
+test('matches query parameters supplied via config.params and exposes captured values in parser context', async () => {
 	const mock = createAxiosMock();
 	const parsedParams = [];
 
@@ -76,12 +76,87 @@ test('matches query parameters and exposes captured values in parser context', a
 
 	const responseHandler = [...mock.handlers.response.values()][0];
 	const response = {
-		config: { method: 'GET', url: '/users?active=true&id=42&include=team' },
+		config: {
+			method: 'GET',
+			url: '/users',
+			params: { active: 'true', id: 42, include: 'team' },
+		},
 		data: { id: 42 },
 	};
 
 	expect(await responseHandler(response)).toBe(response);
 	expect(parsedParams).toEqual([{ id: '42' }]);
+});
+
+test('matches query parameters supplied via config.params for request matching', async () => {
+	const mock = createAxiosMock();
+	const parsed = [];
+
+	createSchemaMiddleware(mock.client, {
+		routes: {
+			'GET /users?active=true&id=:id': { request: 'user-request' },
+		},
+		parse: (schema, data, context) => {
+			parsed.push({ schema, params: context.params, data });
+			return data;
+		},
+	});
+
+	const requestHandler = [...mock.handlers.request.values()][0];
+	const config = {
+		method: 'GET',
+		url: '/users',
+		params: { active: true, id: '42' },
+		data: { name: 'Ada' },
+	};
+
+	expect(await requestHandler(config)).toEqual(config);
+	expect(parsed).toEqual([{ schema: 'user-request', params: { id: '42' }, data: { name: 'Ada' } }]);
+});
+
+test('normalizes config.params across supported Axios query param shapes', async () => {
+	const mock = createAxiosMock();
+	const parsedParams = [];
+
+	createSchemaMiddleware(mock.client, {
+		routes: {
+			'GET /users?active=true&id=:id': { response: 'user-response' },
+		},
+		parse: (schema, data, context) => {
+			parsedParams.push(context.params);
+			return data;
+		},
+	});
+
+	const responseHandler = [...mock.handlers.response.values()][0];
+	const cases = [
+		new URLSearchParams('active=true&id=42&include=team'),
+		'active=true&id=42&include=team',
+		['ignored', ['id', '42'], [undefined, 'ignored'], ['meta', undefined], ['active', 'true'], ['include', 'team']],
+		{ active: true, id: 42, include: undefined, tags: [undefined, 'b'], meta: { role: 'admin' } },
+	];
+
+	for (const params of cases) {
+		const response = {
+			config: { method: 'GET', url: '/users', params },
+			data: { id: 42 },
+		};
+		expect(await responseHandler(response)).toBe(response);
+	}
+
+	expect(parsedParams).toEqual([
+		{ id: '42' },
+		{ id: '42' },
+		{ id: '42' },
+		{ id: '42' },
+	]);
+
+	const nullParamsResponse = {
+		config: { method: 'GET', url: '/users', params: null },
+		data: { id: 42 },
+	};
+	expect(await responseHandler(nullParamsResponse)).toBe(nullParamsResponse);
+	expect(parsedParams).toHaveLength(4);
 });
 
 test('does not match routes with missing or mismatched query parameters', async () => {
