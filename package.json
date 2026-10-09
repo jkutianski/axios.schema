@@ -1,6 +1,6 @@
 {
   "name": "axios.schema",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Route-based Axios middleware for validating URL params, request bodies, and response payloads with Zod, JSON Schema/Ajv, or any custom parser",
   "repository": {
     "type": "git",
