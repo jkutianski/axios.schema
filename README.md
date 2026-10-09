@@ -6,7 +6,7 @@ Use this when an Axios client needs API contract validation at its request/respo
 
 ## Usage
 
-From the source checkout, install the project dependencies:
+Install the project dependencies:
 
 ```sh
 npm install axios.schema axios
