@@ -86,15 +86,17 @@ parse(schema, data, context)
 
 - `phase`: `'urlParams' | 'request' | 'response'`
 - `config`: Axios request config
-- `params`: matched path/query values as strings
+- `params`: captured path/query values during `urlParams`; afterwards, the parsed object returned by `urlParams`
 - `response`: response object during response phase
 
 Behavior:
 
-- `urlParams`: validates the captured path/query parameter object; the parser's return value is ignored, so these params are not transformed in the same way as request or response bodies
+- `urlParams`: validates/transforms the captured path/query parameter object; return an object to use normalized params (for example, coerced numbers) in request and response parser contexts. The `urlParams` phase itself receives the original string captures.
 - `request`: validates/transforms `config.data`, and the returned value replaces the request body
 - `response`: validates/transforms the successful `response.data`, and the returned value replaces the response payload
 - thrown errors or rejected promises fail the request
+
+URL path and query captures are strings. With Zod, use `z.coerce.number()` to convert a value such as `'42'` into `42`; that parsed value is then available as `context.params.id` in the request and response phases. `z.number()` alone expects a number and will reject the original string capture.
 
 ## Route matching rules
 
@@ -155,7 +157,7 @@ const parse = (schema, data) => {
 - literal query values match exactly
 - when the request config includes `params`, those values are merged into the effective URL before matching; existing URL query entries are preserved and appended
 - parser is throwing or rejecting unexpectedly
-- `context.params` values are stringified as expected
+- `context.params` contains original string captures if there is no `urlParams` schema, otherwise it contains the object returned by the `urlParams` parser in later phases
 
 ## Repo maintenance notes
 

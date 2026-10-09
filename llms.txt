@@ -21,7 +21,7 @@ Route keys support:
 - method matching (`GET`, `POST`, etc.)
 - path parameters like `:id`
 - query params like `?id=:id&active=true`
-- string-valued captures in `context.params`
+- string-valued captures in the `urlParams` phase; the parsed object is used in later phases
 
 The middleware uses Axios request/response interceptors and applies matching schemas in the `urlParams`, `request`, and `response` phases.
 
@@ -38,7 +38,9 @@ parse(schema, data, context)
 - `params`: captured path/query values
 - `response`: Axios response object during response phase
 
-For `request` and `response`, the parser return value replaces the original data. For `urlParams`, validation runs but the returned value is ignored.
+For `request` and `response`, the parser return value replaces the original data. For `urlParams`, return the validated parameter object to make it available as `context.params` in the request and response phases.
+
+Path and query parameter captures are strings. With Zod, use `z.coerce.number()` to convert a capture such as `'42'` to `42`; the transformed value is available in later parser phases. `z.number()` alone rejects the string capture.
 
 ## Documentation and source
 

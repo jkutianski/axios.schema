@@ -64,19 +64,21 @@ Where `context` contains:
 
 - `phase`: `'urlParams' | 'request' | 'response'`
 - `config`: the Axios request config
-- `params`: matched path/query params as strings
+- `params`: captured path/query params as strings during `urlParams`; for later phases, the object returned by the `urlParams` parser
 - `response`: the Axios response object during the response phase
 
-For `request` and `response`, the parsed return value replaces the original data. For `urlParams`, the value is validated but the returned value is ignored; `context.params` remains the original captured values.
+For `request` and `response`, the parsed return value replaces the original data. For `urlParams`, the parser receives the captured path/query parameter object and must return an object; that parsed object becomes `context.params` in later request and response phases. The `urlParams` phase itself receives the original string-valued captures.
+
+Path and query captures are strings. When using Zod and a route parameter should be numeric, use `z.coerce.number()` to turn a value like `'42'` into `42`; the parsed value is available in later parser phases. `z.number()` alone rejects the original string.
 
 ## Request flow
 
 1. `createSchemaMiddleware` builds route metadata from the `routes` map.
 2. Axios request interceptor resolves a route match for the outgoing config.
-3. If `urlParams` exists, it validates `context.params` before request data validation.
-4. If `request` exists, it validates/transforms `config.data`.
+3. If `urlParams` exists, it validates/transforms the captured parameters before request data validation.
+4. If `request` exists, it validates/transforms `config.data`, receiving the parsed URL params in `context.params`.
 5. Axios response interceptor resolves a route match for the response config.
-6. If `response` exists, it validates/transforms `response.data`.
+6. If `response` exists, it validates/transforms successful `response.data`, receiving the parsed URL params in `context.params`.
 
 ## Validation approach
 
@@ -118,7 +120,7 @@ npm run test:types
 - Code is ESM (`"type": "module"`)
 - The library is small and focused; prefer minimal, direct implementations
 - Keep route matching behavior compatible with Axios request configs
-- Preserve the `context.params` contract across path/query captures
+- Preserve `context.params`: it contains the captured values in `urlParams` and the parsed object in later phases
 
 ## Helpful references
 
