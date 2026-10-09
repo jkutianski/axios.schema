@@ -4,7 +4,7 @@
   "description": "Route-based Axios request, response, and URL parameter validation using Zod, JSON Schema/Ajv, or a custom parser",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jkutianski/axios.schema"
+    "url": "git+https://github.com/jkutianski/axios.schema.git"
   },
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
