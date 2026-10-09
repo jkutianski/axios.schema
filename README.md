@@ -1,4 +1,6 @@
-# axios.schema
+# axios.schema ![License](https://badgen.net/github/license/jkutianski/axios.schema) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jkutianski/axios.schema/ci.yml)  ![NPM Version](https://badgen.net/npm/v/axios.schema)
+
+
 
 **Route-based runtime validation for Axios.** Define schemas by HTTP method and URL path, then validate URL parameters, request bodies, and successful response data with <strong>Zod</strong>, <strong>JSON Schema/Ajv</strong>, or your own synchronous or asynchronous parser.
 
