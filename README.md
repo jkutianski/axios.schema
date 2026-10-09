@@ -4,8 +4,6 @@
 
 Use this when an Axios client needs API contract validation at its request/response boundary. `axios.schema` connects Axios routes to a validator; it is not a schema language or validation library, and it adds no runtime dependency on Zod, Ajv, or TypeScript.
 
-> From a project checkout, run `npm install` and import from `./src/index.js`. After publication, install it with `npm install axios.schema axios` and import from `axios.schema`.
-
 ## Usage
 
 From the source checkout, install the project dependencies:
