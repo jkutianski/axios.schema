@@ -26,7 +26,7 @@ and validates:
 Install the core dependencies:
 
 ```bash
-npm install axios axios.schema
+npm install axios @isomorphic.schema/axios
 ```
 
 The following Basic setup example uses Zod, so install it before running that example:
@@ -41,7 +41,7 @@ Zod is optional. You can use Ajv or a custom parser instead.
 
 ```js
 import axios from 'axios';
-import { createSchemaMiddleware } from 'axios.schema';
+import { createSchemaMiddleware } from '@isomorphic.schema/axios';
 import { z } from 'zod';
 
 const client = axios.create({ baseURL: 'https://api.example.com' });

@@ -1,4 +1,4 @@
-# ![axios.schema](logo.svg) ![License](https://badgen.net/github/license/jkutianski/axios.schema) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jkutianski/axios.schema/ci.yml) ![NPM Version](https://badgen.net/npm/v/axios.schema)
+# [![axios.schema](logo.svg)](https://github.com/jkutianski/axios.schema) [![License](https://badgen.net/github/license/jkutianski/axios.schema)](https://github.com/jkutianski/axios.schema/blob/main/LICENSE) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jkutianski/axios.schema/ci.yml)](https://github.com/jkutianski/axios.schema/actions) [![NPM Version](https://badgen.net/npm/v/@isomorphic.schema/axios)](https://www.npmjs.com/package/@isomorphic.schema/axios)
 
 **Route-based runtime validation for Axios.** Define schemas by HTTP method and URL path, then validate URL parameters, request bodies, and successful response data with <strong>Zod</strong>, <strong>JSON Schema/Ajv</strong>, or your own synchronous or asynchronous parser.
 
@@ -9,12 +9,12 @@ Use this when an Axios client needs API contract validation at its request/respo
 Install the project dependencies:
 
 ```sh
-npm install axios.schema axios
+npm install @isomorphic.schema/axios axios
 ```
 
 ```js
 import axios from 'axios';
-import { createSchemaMiddleware } from 'axios.schema';
+import { createSchemaMiddleware } from '@isomorphic.schema/axios';
 
 const client = axios.create({ baseURL: 'https://api.example.com' });
 
@@ -93,7 +93,7 @@ The middleware does not depend on a particular schema library. Adapt its parser 
 
 ```js
 import { z } from 'zod';
-import { createSchemaMiddleware } from 'axios.schema';
+import { createSchemaMiddleware } from '@isomorphic.schema/axios';
 
 const itemRequest = z.object({ name: z.string() });
 const itemResponse = z.object({ id: z.number(), name: z.string() });
@@ -122,7 +122,7 @@ JSON Schema works with validators such as Ajv. The parser validates the data and
 
 ```js
 import Ajv from 'ajv';
-import { createSchemaMiddleware } from 'axios.schema';
+import { createSchemaMiddleware } from '@isomorphic.schema/axios';
 
 const ajv = new Ajv();
 

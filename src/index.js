@@ -136,7 +136,7 @@ function matchQuery(patternParams, searchParams, params) {
  * @example
  * import axios from 'axios';
  * import { z } from 'zod';
- * import { createSchemaMiddleware } from 'axios.schema';
+ * import { createSchemaMiddleware } from '@isomorphic.schema/axios';
  *
  * const client = axios.create({ baseURL: 'https://api.example.com' });
  * const detach = createSchemaMiddleware(client, {
